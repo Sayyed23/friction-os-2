@@ -3,7 +3,7 @@
 import { FormEvent, useEffect, useState } from "react";
 import { Activity, ArrowRight, Clock3, LoaderCircle, Plus } from "lucide-react";
 import { WorkspaceFrame } from "../_components/workspace-frame";
-import { WorkspaceAgent, WorkspaceTask, agentStoreKey, taskStoreKey, sheetStoreKey, readStored } from "../_components/workspace-state";
+import { WorkspaceAgent, WorkspaceTask, agentStoreKey, taskStoreKey, sheetStoreKey, uploadedRecordsStoreKey, readStored } from "../_components/workspace-state";
 
 type Provider = "openai" | "openrouter";
 type ModelOption = { id: string; name: string };
@@ -52,11 +52,15 @@ export default function TasksPage() {
     try {
       let records: unknown[] | undefined;
       if (assigned.capabilities.some(cap => cap.startsWith("Google Sheets"))) {
-        const sheetId = localStorage.getItem(sheetStoreKey) || "";
-        const sheetResponse = await fetch(`/api/google/sheets?spreadsheetId=${encodeURIComponent(sheetId)}`);
-        const sheet = await sheetResponse.json();
-        if (!sheetResponse.ok) throw new Error(sheet.error || "Could not read Google Sheets.");
-        records = sheet.records;
+        const uploaded = localStorage.getItem(uploadedRecordsStoreKey);
+        if (uploaded) records = JSON.parse(uploaded) as unknown[];
+        else {
+          const sheetId = localStorage.getItem(sheetStoreKey) || "";
+          const sheetResponse = await fetch(`/api/google/sheets?spreadsheetId=${encodeURIComponent(sheetId)}`);
+          const sheet = await sheetResponse.json();
+          if (!sheetResponse.ok) throw new Error(sheet.error || "Could not read Google Sheets.");
+          records = sheet.records;
+        }
       }
       const response = await fetch("/api/investigate", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ query: task.title, records, provider, model }) });
       const result = await response.json();

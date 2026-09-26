@@ -3,6 +3,8 @@ export type WorkspaceTask = { id: string; title: string; agentName: string; stat
 export const agentStoreKey = "friction_workspace_agents";
 export const taskStoreKey = "friction_workspace_tasks";
 export const sheetStoreKey = "friction_google_sheet_id";
+export const uploadedRecordsStoreKey = "friction_uploaded_records";
+export const uploadedFileNameStoreKey = "friction_uploaded_file_name";
 export const builtInSkills = ["create_task", "create_approval", "write_audit_log"];
 export const fallbackModels = [
   { id: "gpt-5.6-luna", label: "GPT-5.6 Luna · cost-efficient" },
