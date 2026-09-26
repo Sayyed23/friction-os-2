@@ -14,7 +14,7 @@ export async function POST(request: Request) {
     );
   }
 
-  let body: { query?: unknown; lowEvidence?: unknown };
+  let body: { query?: unknown; lowEvidence?: unknown; records?: unknown };
   try {
     body = await request.json();
   } catch {
@@ -28,7 +28,9 @@ export async function POST(request: Request) {
   if (!allowedModels.has(model)) {
     return NextResponse.json({ error: "OPENAI_MODEL must be gpt-5.6-luna or gpt-5.6-terra." }, { status: 500 });
   }
-  const records = body.lowEvidence === true ? vendorZShipments : shipments;
+  const records = Array.isArray(body.records) && body.records.length > 0 && body.records.length <= 500
+    ? body.records
+    : body.lowEvidence === true ? vendorZShipments : shipments;
 
   try {
     const response = await fetch("https://api.openai.com/v1/responses", {
@@ -54,7 +56,7 @@ export async function POST(request: Request) {
         ).join("\n").trim()
       : "";
     if (!text) return NextResponse.json({ error: "OpenAI returned an empty response." }, { status: 502 });
-    return NextResponse.json({ analysis: text, model });
+    return NextResponse.json({ analysis: text, model, sourceRows: Array.isArray(body.records) ? records.length : null });
   } catch {
     return NextResponse.json({ error: "Could not reach the OpenAI API. Check your connection and try again." }, { status: 502 });
   }
