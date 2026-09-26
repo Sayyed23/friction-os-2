@@ -28,7 +28,11 @@ export default function TasksPage() {
     const list = [defaultAgent, ...savedAgents];
     setAgents(list);
     setAgentId(list[0].id);
-    setTasks(readStored<WorkspaceTask[]>(taskStoreKey, []));
+    const history = readStored<WorkspaceTask[]>(taskStoreKey, []).map(task => task.status === "Needs attention" && !task.result
+      ? { ...task, result: "This task failed before the app saved its error details. Submit it again to see the exact reason here." }
+      : task);
+    setTasks(history);
+    localStorage.setItem(taskStoreKey, JSON.stringify(history));
   }, []);
 
   useEffect(() => {
@@ -75,9 +79,10 @@ export default function TasksPage() {
       const completed = { ...task, status: "Completed", result: `${result.provider === "openrouter" ? "OpenRouter" : "OpenAI"} · ${result.model}: ${result.analysis}` };
       const updated = [completed, ...tasks]; setTasks(updated); localStorage.setItem(taskStoreKey, JSON.stringify(updated));
     } catch (err) {
-      const failed = { ...task, status: "Needs attention" };
+      const failure = err instanceof Error ? err.message : "Task failed. Check the connection, API key, model access, or attached file and retry.";
+      const failed = { ...task, status: "Needs attention", result: `Task did not complete: ${failure}` };
       const updated = [failed, ...tasks]; setTasks(updated); localStorage.setItem(taskStoreKey, JSON.stringify(updated));
-      setError(err instanceof Error ? err.message : "Task failed.");
+      setError(failure);
     } finally { setBusy(false); setFiles([]); }
   }
 
@@ -97,6 +102,6 @@ export default function TasksPage() {
         <button className="button primary" disabled={busy || !title.trim() || !model} type="submit">{busy ? <LoaderCircle size={15} className="spin-icon"/> : <Plus size={15}/>} {busy ? "Running investigation" : "Create task"}<ArrowRight size={14}/></button>{error && <p className="route-error">{error}</p>}
       </form>
     </section>
-    <section className="route-panel"><div className="route-panel-heading"><div><span className="section-label">TASK HISTORY</span><h2>{tasks.length} tasks</h2></div></div>{tasks.length ? tasks.map(task => <article className="task-row-card" key={task.id}><span className={`task-status-dot ${task.status === "Completed" ? "done" : "pending"}`}/><div><div className="task-row-title"><b>{task.title}</b><span>{task.status}</span></div><p>{task.agentName} <i>·</i> {task.createdAt}</p>{task.attachments?.length ? <p className="task-attachments"><FileText size={12}/> Evidence: {task.attachments.join(", ")}</p> : null}{task.result && <blockquote>{task.result}</blockquote>}</div></article>) : <div className="route-empty"><Clock3 size={22}/><b>No tasks yet</b><span>Create a task to see its investigation and status here.</span></div>}</section>
+    <section className="route-panel"><div className="route-panel-heading"><div><span className="section-label">TASK HISTORY</span><h2>{tasks.length} tasks</h2></div></div>{tasks.length ? tasks.map(task => <article className="task-row-card" key={task.id}><span className={`task-status-dot ${task.status === "Completed" ? "done" : "pending"}`}/><div><div className="task-row-title"><b>{task.title}</b><span>{task.status}</span></div><p>{task.agentName} <i>·</i> {task.createdAt}</p>{task.attachments?.length ? <p className="task-attachments"><FileText size={12}/> Evidence: {task.attachments.join(", ")}</p> : null}{task.result && <blockquote className={task.status === "Completed" ? "task-result" : "task-result task-result-error"}><b>{task.status === "Completed" ? "Investigation result" : "Why it needs attention"}</b><br/>{task.result}</blockquote>}</div></article>) : <div className="route-empty"><Clock3 size={22}/><b>No tasks yet</b><span>Create a task to see its investigation and status here.</span></div>}</section>
   </div></WorkspaceFrame>;
 }
