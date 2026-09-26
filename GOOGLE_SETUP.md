@@ -5,7 +5,9 @@ FrictionOS uses Google OAuth on the server. Refresh tokens stay in an HTTP-only 
 ## Configure Google OAuth
 
 1. In Google Cloud Console, create a project, enable the Google Sheets API and Google Picker API, and configure the OAuth consent screen. If the app is in Testing mode, add your Google account as a test user.
-2. Create an OAuth client ID for a **Web application**. Add this authorized redirect URI:
+2. Create an OAuth client ID for a **Web application**. Add both authorized redirect URIs:
+
+   `http://localhost:3000/api/google/login/callback` (Google sign-in)
 
    `http://localhost:3000/api/google/callback`
 
@@ -14,13 +16,15 @@ FrictionOS uses Google OAuth on the server. Refresh tokens stay in an HTTP-only 
    ```dotenv
    GOOGLE_CLIENT_ID=...
    GOOGLE_CLIENT_SECRET=...
+   GOOGLE_LOGIN_REDIRECT_URI=http://localhost:3000/api/google/login/callback
    GOOGLE_REDIRECT_URI=http://localhost:3000/api/google/callback
    NEXT_PUBLIC_GOOGLE_API_KEY=...
    NEXT_PUBLIC_GOOGLE_PROJECT_NUMBER=...
    ```
 
-4. Restart the development server. Open **Dashboard → Tools**, select Google Sheets, then choose **Connect selected services** and complete Google's consent flow.
-5. Choose **Google Sheets** in Tools, connect it, then click **Choose Google Sheet** and select the shipment spreadsheet in Google Picker. The first tab should have column headers in row 1; its rows are read as shipment evidence when a Google Sheets capability is assigned to an agent.
-6. Create an agent, select the Google Sheets capabilities it needs, then create a task for that agent. The task reads up to 500 rows from the configured sheet and sends those rows to the configured OpenAI model for analysis.
+4. Restart the development server. On the start page choose **Continue with Google**. This signs in with identity scopes only; it does not grant access to Gmail, Sheets or Drive.
+5. After sign-in, open **Dashboard → Tools**, select only the Google services you need, then choose **Connect selected services** and complete Google's separate consent flow.
+6. Choose **Google Sheets** in Tools, connect it, then click **Choose Google Sheet** and select the shipment spreadsheet in Google Picker. The first tab should have column headers in row 1; its rows are read as shipment evidence when a Google Sheets capability is assigned to an agent.
+7. Create an agent, select the Google Sheets capabilities it needs, then create a task for that agent. The task reads up to 500 rows from the configured sheet and sends those rows to the configured model for analysis.
 
 The Sheets connection uses Google's per-file `drive.file` permission and Picker so the app receives access only to the spreadsheet you choose. The provider can also request Docs, Drive, Gmail, and Calendar permissions individually. FrictionOS currently executes Google Sheets reads in task investigations; Gmail and Calendar actions are capability choices for the next integration step.
