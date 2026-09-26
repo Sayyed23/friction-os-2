@@ -1,5 +1,5 @@
 export type WorkspaceAgent = { id: string; name: string; description: string; capabilities: string[]; model?: string };
-export type WorkspaceTask = { id: string; title: string; agentName: string; status: string; createdAt: string; result?: string };
+export type WorkspaceTask = { id: string; title: string; agentName: string; status: string; createdAt: string; result?: string; attachments?: string[] };
 export const agentStoreKey = "friction_workspace_agents";
 export const taskStoreKey = "friction_workspace_tasks";
 export const sheetStoreKey = "friction_google_sheet_id";
